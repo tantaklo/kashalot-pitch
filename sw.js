@@ -1,4 +1,4 @@
-const CACHE = 'kashalot-pitch-v3';
+const CACHE = 'kashalot-pitch-v4';
 const FILES = [
   './',
   './index.html',
