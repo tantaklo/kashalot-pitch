@@ -181,6 +181,54 @@ body {
   border: 1px solid rgba(255,255,255,0.18); border-radius: 4px;
   padding: 0 5px; font-size: 11px; font-family: monospace;
 }
+
+/* ── Mobile: portrait phone ── */
+@media (max-width: 640px) {
+  body { height: 100dvh; }
+
+  .topbar { padding: 8px 14px; }
+  .logo { font-size: 0; }
+  .logo::before { content: '🐋'; font-size: 20px; }
+  .slide-num { font-size: 12px; }
+  .slide-num strong { font-size: 15px; }
+  .timer { font-size: 18px; padding: 5px 10px; }
+
+  .main { overflow-y: auto; }
+
+  .slide {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .slide-thumb {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px 0;
+  }
+  .thumb-img {
+    width: 130px;
+    flex-shrink: 0;
+    position: static;
+  }
+  .thumb-label { display: none; }
+
+  .slide-text {
+    flex: none;
+    width: 100%;
+    padding: 12px 20px 20px;
+    overflow-y: visible;
+  }
+
+  .speech { font-size: 21px; line-height: 1.6; }
+  .speech .big { font-size: 26px; }
+  .interact p { font-size: 19px; }
+
+  .nav { padding: 10px 14px; }
+  .btn { font-size: 14px; padding: 9px 14px; }
+  .hints { font-size: 11px; }
+}
 </style>
 </head>
 <body>
