@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Кашалот — Питч · Арена Единорогов</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#D32F2F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Кашалот">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --red: #D32F2F;
+  --blue: #1565C0;
+  --navy: #0d1b2a;
+  --navy2: #111f30;
+  --text: #ffffff;
+  --dim: #94a3b8;
+  --amber: #f59e0b;
+  --green: #22c55e;
+}
+
+body {
+  background: var(--navy);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Top bar */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 24px;
+  background: var(--navy2);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+}
+.logo { font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
+.slide-num { font-size: 13px; color: var(--dim); }
+.slide-num strong { color: white; font-size: 17px; }
+.timer {
+  font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums;
+  color: var(--green); cursor: pointer; padding: 4px 14px; border-radius: 8px;
+  user-select: none; transition: background 0.2s;
+}
+.timer:hover { background: rgba(255,255,255,0.06); }
+.timer.paused { color: var(--dim); }
+.timer.warn { color: var(--amber); }
+.timer.danger { color: var(--red); animation: blink 1s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* Progress */
+.progress { height: 3px; background: rgba(255,255,255,0.07); flex-shrink: 0; }
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--red) 0%, var(--blue) 100%);
+  transition: width 0.25s ease;
+}
+
+/* Dots */
+.dots {
+  display: flex; gap: 5px; padding: 8px 20px;
+  background: var(--navy2); flex-shrink: 0;
+  justify-content: center; overflow-x: auto; scrollbar-width: none;
+}
+.dots::-webkit-scrollbar { display: none; }
+.dot {
+  width: 22px; height: 4px; border-radius: 2px;
+  background: rgba(255,255,255,0.12); cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+}
+.dot.visited { background: rgba(255,255,255,0.3); }
+.dot.active { background: var(--red); width: 34px; }
+.dot:hover { background: rgba(255,255,255,0.5); }
+
+/* Main */
+.main { flex: 1; overflow: hidden; }
+
+.slide {
+  height: 100%; display: flex; flex-direction: row; gap: 0;
+  animation: enter 0.18s ease;
+}
+@keyframes enter { from { opacity: 0.5; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+.slide.red-bg  { background: rgba(211,47,47,0.04); }
+.slide.blue-bg { background: rgba(21,101,192,0.04); }
+
+/* Left: speech text */
+.slide-text {
+  flex: 1; min-width: 0;
+  padding: 20px 24px 20px 40px;
+  overflow-y: auto;
+}
+.slide-text::-webkit-scrollbar { width: 4px; }
+.slide-text::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+.slide-tag {
+  font-size: 11px; font-weight: 800; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--red); margin-bottom: 5px;
+}
+.slide-title {
+  font-size: 13px; color: var(--dim); font-weight: 500;
+  padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.07);
+  margin-bottom: 20px;
+}
+
+/* Speech text */
+.speech { font-size: 24px; line-height: 1.7; }
+.speech p { margin-bottom: 16px; }
+.speech .big { font-size: 30px; font-weight: 700; line-height: 1.35; }
+.speech .r { color: var(--red); font-weight: 600; }
+.speech .b { color: #60a5fa; font-weight: 600; }
+.speech .g { color: var(--green); font-weight: 600; }
+.speech .dim { color: var(--dim); font-size: 19px; }
+.speech strong { color: white; font-weight: 700; }
+
+/* Interactive block */
+.interact {
+  background: rgba(245,158,11,0.1);
+  border: 2px solid var(--amber);
+  border-radius: 12px; padding: 14px 18px; margin: 14px 0;
+}
+.interact-label {
+  font-size: 10px; font-weight: 800; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--amber); margin-bottom: 10px;
+}
+.interact p { font-size: 22px; color: #fef3c7; line-height: 1.5; margin-bottom: 8px; }
+.interact p:last-child { margin-bottom: 0; }
+.interact .hl { color: var(--amber); font-weight: 700; }
+
+/* Right: thumbnail */
+.slide-thumb {
+  width: 240px; flex-shrink: 0;
+  padding: 20px 20px 20px 0;
+  display: flex; flex-direction: column; gap: 8px;
+  align-items: flex-start;
+}
+.thumb-img {
+  width: 100%; border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  position: sticky; top: 0;
+}
+.thumb-label {
+  font-size: 11px; color: var(--dim); text-align: center; width: 100%;
+}
+
+/* Nav */
+.nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 24px; background: var(--navy2);
+  border-top: 1px solid rgba(255,255,255,0.07); flex-shrink: 0;
+}
+.btn {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+  color: white; padding: 9px 20px; border-radius: 8px;
+  font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+}
+.btn:hover:not(:disabled) { background: rgba(255,255,255,0.14); }
+.btn:disabled { opacity: 0.25; cursor: not-allowed; }
+.btn.fwd { background: var(--red); border-color: transparent; }
+.btn.fwd:hover:not(:disabled) { background: #b71c1c; }
+.hints { font-size: 12px; color: var(--dim); text-align: center; line-height: 1.8; }
+.kbd {
+  display: inline-block; background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.18); border-radius: 4px;
+  padding: 0 5px; font-size: 11px; font-family: monospace;
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">🐋 Кашалот Шеринг</div>
+  <div class="slide-num">Слайд <strong id="sNum">1</strong> / 20</div>
+  <div class="timer paused" id="timer" onclick="toggleTimer()" title="Нажми или Space — запустить таймер">5:00</div>
+</div>
+
+<div class="progress"><div class="progress-fill" id="prog" style="width:5%"></div></div>
+<div class="dots" id="dots"></div>
+
+<div class="main">
+  <div class="slide" id="slide"></div>
+</div>
+
+<div class="nav">
+  <button class="btn" id="prev" onclick="go(-1)" disabled>← Назад</button>
+  <div class="hints">
+    <span class="kbd">←</span> <span class="kbd">→</span> листать &nbsp;
+    <span class="kbd">Space</span> таймер<br>
+    <span class="kbd">Home</span> начало &nbsp;
+    <span class="kbd">End</span> конец
+  </div>
+  <button class="btn fwd" id="next" onclick="go(1)">Вперёд →</button>
+</div>
+
+<script>
+const SLIDES = [
+  {
+    tag: '01 / Титул',
+    title: 'Кашалот Шеринг · Антон Елизаров · 20 июня 2026',
+    bg: '',
+    html: `
+      <p class="big">Я представляю <span class="r">Кашалот</span> —</p>
+      <p class="big">всесезонный шеринг электроснегокатов<br>российского производства.</p>
+    `
+  },
+  {
+    tag: '02 / Предложение инвесторам',
+    title: 'Предложение для инвесторов · Brainbox.VC',
+    bg: 'red-bg',
+    html: `
+      <p>Мы привлекаем раунд на платформе Брейнбокс.</p>
+      <p class="big"><span class="r">10%</span> компании за <span class="r">60 миллионов рублей.</span></p>
+    `
+  },
+  {
+    tag: '03 / Проблема рынка',
+    title: 'B2B аудитория · Франчайзи кикшеринга · Боль зимой',
+    bg: '',
+    html: `
+      <p>На рынке кикшеринга есть одна большая проблема.</p>
+      <p class="big"><span class="r">Сезонность.</span></p>
+      <p class="big">Летом густо — зимой пусто.</p>
+    `
+  },
+  {
+    tag: '04 / Решение + интерактив',
+    title: 'Новый вид семейного досуга · Электроснегокаты «Кашалот»',
+    bg: '',
+    html: `
+      <p>Поэтому мы спроектировали, произвели, запустили в прокат<br>больше тысячи кашалотов — и заставили их зарабатывать.</p>
+      <div class="interact">
+        <div class="interact-label">⚡ Интерактив с залом</div>
+        <p>Поднимите руки, кто знает наш проект — катался, видел в соцсетях, слышал от знакомых?</p>
+        <p>Не опускайте.</p>
+        <p>Оставьте руки, у кого есть дети.</p>
+        <p class="hl">Спасибо.</p>
+      </div>
+    `
+  },
+  {
+    tag: '05 / Продукт',
+    title: 'Адаптирован к шерингу · Характеристики',
+    bg: 'blue-bg',
+    html: `
+      <p>Кашалоты созданы для шеринга.</p>
+      <p>Сменная батарея, надёжная конструкция,<br>скорость ограничена нашим российским трекером.</p>
+    `
+  },
+  {
+    tag: '06 / Экосистема',
+    title: 'Структура экосистемы · Производство в Орехово-Зуево',
+    bg: 'blue-bg',
+    html: `
+      <p>Мы не купили что-то в Китае.</p>
+      <p>Мы с нуля спроектировали и производим технику<br>в подмосковном <strong>Орехово-Зуево.</strong></p>
+      <p>Кроме техники — мы создали собственный <span class="b">софт, электронику</span><br>и выстроили сильную сеть франчайзи-партнёров.</p>
+    `
+  },
+  {
+    tag: '07 / Позиционирование',
+    title: 'Голубой океан шеринга развлечений',
+    bg: '',
+    html: `
+      <p>Все знают каршеринг и кикшеринг — это транспортный сценарий.</p>
+      <p class="big">Мы сфокусированы на <span class="r">развлекательном.</span></p>
+      <p>Подошёл, отсканировал QR — приложение скачивать не нужно.</p>
+      <p>Заплатил <strong>300 рублей по СБП,</strong> подрифтил,<br>оставил, когда закончилось время.</p>
+    `
+  },
+  {
+    tag: '08 / География',
+    title: 'География присутствия · Карта России',
+    bg: 'red-bg',
+    html: `
+      <p class="big"><span class="r">Более 300 локаций</span> по всей стране.</p>
+      <p class="big"><span class="r">Более 100 городов.</span></p>
+      <p class="big"><span class="r">50 франчайзи-партнёров.</span></p>
+    `
+  },
+  {
+    tag: '09 / Трекшн',
+    title: 'Трекшн · Рост ×4 · Сколково · МТС · Юрент',
+    bg: 'blue-bg',
+    html: `
+      <p>Запустились в декабре 2024.</p>
+      <p>За плечами — <strong>два зимних сезона.</strong></p>
+      <p>Прямо сейчас развиваем летний.</p>
+      <p>Стали резидентами МИК, Сколково и МТС Стартап Хаб.<br>Интегрировались в Юрент.</p>
+      <p>Ключевые показатели — рост <span class="g">×4 год к году.</span></p>
+    `
+  },
+  {
+    tag: '10 / Видео · Всесезонность',
+    title: 'Всесезонность · Зима / Кашалот Плюс / Дрифт у ТЦ',
+    bg: '',
+    html: `
+      <p>Пока вы смотрите как катаются зимние и летние кашалоты,<br>я спрошу зал —</p>
+      <div class="interact">
+        <div class="interact-label">⚡ Интерактив с залом — пока идёт видео</div>
+        <p>Здесь есть наши франчайзи?</p>
+        <p><strong>Альберт, привет!</strong> Как тебе бизнес?</p>
+        <p class="hl">Альберт запустил 6 северных городов этой зимой. Красавчик!</p>
+      </div>
+    `
+  },
+  {
+    tag: '11 / ПМЭФ · GMV летом',
+    title: '10 млн рублей GMV летом · ПМЭФ · Выставки',
+    bg: 'blue-bg',
+    html: `
+      <p>Мы хорошо понимаем: наш бизнес зависит от локаций.</p>
+      <p>Где одним разговором можно выйти<br>на всех губернаторов и их замов?</p>
+      <p>Поэтому мы поехали на <span class="b">ПМЭФ</span> —<br>и активно работаем с выставками.</p>
+    `
+  },
+  {
+    tag: '12 / Соцсети · 40 млн просмотров',
+    title: 'Активное присутствие в соцсетях · TikTok · 40 млн',
+    bg: 'red-bg',
+    html: `
+      <p>В прошлом году без продажи доли мы привлекли<br><span class="r">70 миллионов живых денег</span> плюс рассрочку от российского производителя батарей.</p>
+      <p>Мы вложились в соцсети. Уверен, многие из вас видели того молодого предпринимателя, который рассказывал про бизнес мистера Биста и кашалоты.</p>
+      <p>Десятки миллионов органических просмотров —<br>именно они позволили нам обойтись без фондов на ранней стадии.</p>
+      <p>Поэтому я здесь. Кашалот придумал российский инженер.<br>Мы развернули конкурентоспособное производство.<br>И всего за полтора года запустились в 100+ городах.</p>
+    `
+  },
+  {
+    tag: '13 / Конкуренты',
+    title: 'Конкуренты · Непрямые и китайские копии',
+    bg: '',
+    html: `
+      <p>Кашалот — очень рентабельный бизнес.</p>
+      <p>Наши франчайзи во многих локациях окупают вложения<br><span class="r">всего за 10 дней новогодних праздников.</span></p>
+      <p>Мы знали, что нас начнут копировать. Китайские аналоги появились — внешне похожи, но материалы другие, детали дешевле или тяжелее. А в шеринге мелкие детали напрямую влияют на стоимость обслуживания. Плюс вопрос запчастей, плюс выросшая цена из-за белой логистики.</p>
+      <p>По цене мы в рынке. <span class="g">Конкуренции не боимся — скорее радуемся.</span></p>
+      <p class="dim">Это признание: рынок есть. А у нас два года форы.<br>Реальная конкуренция сейчас — непрямая: другие развлечения в том же ценовом сегменте.</p>
+    `
+  },
+  {
+    tag: '14 / Рынок',
+    title: 'Рынок · TAM / SAM / SOM · Казахстан · Бразилия',
+    bg: 'blue-bg',
+    html: `
+      <p class="big">Нам есть куда расти.</p>
+      <p>В России — потенциал на <span class="r">10–15 тысяч кашалотов.</span></p>
+      <p>Парки, набережные, скверы — и загородные отели:<br>там мало аутдор-развлечений для детей.</p>
+      <p>Казахстан уже запущен. <strong>Бразилия — на низком старте.</strong></p>
+    `
+  },
+  {
+    tag: '15 / Юнит-экономика',
+    title: 'Юнит-экономика: подтверждённая модель · дек 2024 – май 2026',
+    bg: 'blue-bg',
+    html: `
+      <p>В шеринге <strong>три ключевые метрики:</strong></p>
+      <p>выручка на единицу техники в сутки,<br>коэффициент утилизации<br>и количество рабочих дней.</p>
+      <p>Мы расширили сезон — рабочих дней стало больше.</p>
+      <p>Выручка на активный кашалот подтвердилась год к году.</p>
+      <p>Главная задача — увеличивать количество ежедневно работающих машин.<br>Команда и партнёры уже знают, как это делать.</p>
+    `
+  },
+  {
+    tag: '16 / Инвестпредложение',
+    title: 'Инвестиционное предложение · АО «Кашалот Инвест» (SPV)',
+    bg: 'red-bg',
+    html: `
+      <p class="big"><span class="r">10%</span> компании за <span class="r">60 миллионов рублей.</span></p>
+      <p>За первые два года ускоренными дивидендами<br>мы <span class="r">вернём инвесторам вложенное,</span><br>а дальше начнём выплату стандартных дивидендов,<br>куда планируем направить <strong>70% от чистой прибыли.</strong></p>
+    `
+  },
+  {
+    tag: '17 / Рост капитализации',
+    title: 'Рост капитализации и дивидендная политика',
+    bg: 'blue-bg',
+    html: `
+      <p>При нашей юнит-экономике —<br>как у управляющей компании, как у IT-компании,<br>как резидента Сколково —</p>
+      <p class="big">при масштабировании<br><span class="g">рентабельность только растёт.</span></p>
+    `
+  },
+  {
+    tag: '18 / Сценарии выхода',
+    title: 'Возможные сценарии выхода · Дивиденды + Экзит',
+    bg: 'blue-bg',
+    html: `
+      <p class="big">У нас отличный <span class="g">дивидендный бизнес,</span></p>
+      <p class="big">поэтому он также имеет<br>отличный потенциал экзита.</p>
+    `
+  },
+  {
+    tag: '19 / Команда',
+    title: 'Команда · 10+ лет в шеринге · Антон · Сергей · Всеволод',
+    bg: 'blue-bg',
+    html: `
+      <p>Всё это стало возможно благодаря тому, что в команде собрались специалисты с 10-летним опытом в шеринге, каждый со своей специализацией.</p>
+      <p>Я запускал франшизное направление Юрент с нуля.<br>От первых поездок на Красной поляне<br>и почти до самой продажи компании МТСу.</p>
+      <p>Сергей — много лет занимается производством,<br>а наша IT-команда создавала решения для разных типов шеринга.</p>
+    `
+  },
+  {
+    tag: '20 / CTA · Финал',
+    title: 'Кашалот-Шеринг на brainbox.VC · QR на экране',
+    bg: 'blue-bg',
+    html: `
+      <p>Прямо сейчас добро пожаловать на страничку<br><strong>Кашалот Шеринга на Брейнбоксе.</strong></p>
+      <p>Именно через эту платформу каждый желающий, если успеет,<br>сможет стать <span class="r">акционером нашей компании.</span></p>
+    `
+  }
+];
+
+let cur = 0;
+let timerSec = 300;
+let timerRunning = false;
+let timerInterval = null;
+const visited = new Set([0]);
+
+function thumbPath(n) {
+  return 'thumbs/slide-' + String(n + 1).padStart(2, '0') + '.jpg';
+}
+
+function render() {
+  const s = SLIDES[cur];
+  const el = document.getElementById('slide');
+  el.className = 'slide ' + (s.bg || '');
+  el.innerHTML = `
+    <div class="slide-text">
+      <div class="slide-tag">${s.tag}</div>
+      <div class="slide-title">${s.title}</div>
+      <div class="speech">${s.html}</div>
+    </div>
+    <div class="slide-thumb">
+      <img class="thumb-img" src="${thumbPath(cur)}" alt="Слайд ${cur + 1}">
+      <div class="thumb-label">Слайд ${cur + 1} / 20</div>
+    </div>
+  `;
+  el.querySelector('.slide-text').scrollTop = 0;
+
+  document.getElementById('sNum').textContent = cur + 1;
+  document.getElementById('prog').style.width = ((cur + 1) / SLIDES.length * 100) + '%';
+  document.getElementById('prev').disabled = cur === 0;
+  document.getElementById('next').disabled = cur === SLIDES.length - 1;
+
+  const dc = document.getElementById('dots');
+  dc.innerHTML = '';
+  SLIDES.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === cur ? ' active' : visited.has(i) ? ' visited' : '');
+    d.title = `Слайд ${i+1}: ${SLIDES[i].tag}`;
+    d.onclick = () => goTo(i);
+    dc.appendChild(d);
+  });
+}
+
+function goTo(n) {
+  visited.add(n);
+  cur = n;
+  render();
+}
+
+function go(dir) {
+  const n = cur + dir;
+  if (n >= 0 && n < SLIDES.length) goTo(n);
+}
+
+function toggleTimer() {
+  if (timerRunning) {
+    clearInterval(timerInterval);
+    timerRunning = false;
+    updateTimer();
+  } else {
+    timerRunning = true;
+    timerInterval = setInterval(() => {
+      if (timerSec > 0) timerSec--;
+      else { clearInterval(timerInterval); timerRunning = false; }
+      updateTimer();
+    }, 1000);
+  }
+}
+
+function updateTimer() {
+  const el = document.getElementById('timer');
+  const m = Math.floor(timerSec / 60);
+  const s = timerSec % 60;
+  el.textContent = m + ':' + String(s).padStart(2, '0');
+  el.className = 'timer';
+  if (!timerRunning && timerSec === 300) { el.classList.add('paused'); return; }
+  if (timerSec <= 30) el.classList.add('danger');
+  else if (timerSec <= 60) el.classList.add('warn');
+}
+
+document.addEventListener('keydown', e => {
+  if (['ArrowRight','ArrowDown','PageDown'].includes(e.key)) { e.preventDefault(); go(1); }
+  else if (['ArrowLeft','ArrowUp','PageUp'].includes(e.key)) { e.preventDefault(); go(-1); }
+  else if (e.key === ' ') { e.preventDefault(); toggleTimer(); }
+  else if (e.key === 'Home') goTo(0);
+  else if (e.key === 'End') goTo(SLIDES.length - 1);
+});
+
+render();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js');
+}
+</script>
+</body>
+</html>
