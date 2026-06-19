@@ -1,7 +1,7 @@
-const CACHE = 'kashalot-pitch-v4';
-const FILES = [
-  './',
-  './index.html',
+const CACHE = 'kashalot-pitch-v5';
+
+// Только статика — картинки и иконки. HTML не кэшируем, чтобы правки появлялись сразу.
+const STATIC = [
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -29,7 +29,7 @@ const FILES = [
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting())
+    caches.open(CACHE).then(c => c.addAll(STATIC)).then(() => self.skipWaiting())
   );
 });
 
@@ -42,6 +42,15 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  const url = new URL(e.request.url);
+  // HTML — всегда с сети, при отсутствии сети — из кэша
+  if (url.pathname.endsWith('.html') || url.pathname.endsWith('/')) {
+    e.respondWith(
+      fetch(e.request).catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+  // Всё остальное (картинки, иконки) — cache-first
   e.respondWith(
     caches.match(e.request).then(r => r || fetch(e.request))
   );
