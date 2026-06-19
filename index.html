@@ -182,6 +182,16 @@ body {
   padding: 0 5px; font-size: 11px; font-family: monospace;
 }
 
+/* Tap zone flash */
+.tap-flash {
+  position: fixed; top: 0; bottom: 0; width: 50%;
+  pointer-events: none; opacity: 0;
+  transition: opacity 0.12s ease; z-index: 999;
+}
+.tap-flash.left  { left: 0;  background: radial-gradient(circle at 15% 50%, rgba(255,255,255,0.1), transparent 60%); }
+.tap-flash.right { right: 0; background: radial-gradient(circle at 85% 50%, rgba(255,255,255,0.1), transparent 60%); }
+.tap-flash.show  { opacity: 1; }
+
 /* ── Mobile: portrait phone ── */
 @media (max-width: 640px) {
   body { height: 100dvh; }
@@ -232,6 +242,9 @@ body {
 </style>
 </head>
 <body>
+
+<div class="tap-flash left" id="flashL"></div>
+<div class="tap-flash right" id="flashR"></div>
 
 <div class="topbar">
   <div class="logo">🐋 Кашалот Шеринг</div>
@@ -556,12 +569,33 @@ function updateTimer() {
   else if (timerSec <= 60) el.classList.add('warn');
 }
 
-// Swipe для листания на touch-устройствах
-let touchX = 0;
-document.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
+// Touch: swipe + tap zones
+let touchX = 0, touchY = 0, touchT = 0;
+
+function showFlash(dir) {
+  const el = document.getElementById(dir > 0 ? 'flashR' : 'flashL');
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 180);
+}
+
+document.addEventListener('touchstart', e => {
+  touchX = e.touches[0].clientX;
+  touchY = e.touches[0].clientY;
+  touchT = Date.now();
+}, { passive: true });
+
 document.addEventListener('touchend', e => {
-  const diff = touchX - e.changedTouches[0].clientX;
-  if (Math.abs(diff) > 50) go(diff > 0 ? 1 : -1);
+  const dx = touchX - e.changedTouches[0].clientX;
+  const dy = touchY - e.changedTouches[0].clientY;
+  // Swipe
+  if (Math.abs(dx) > 50) { go(dx > 0 ? 1 : -1); return; }
+  // Tap (quick + small movement + not on UI controls)
+  if (Math.abs(dx) < 15 && Math.abs(dy) < 15 && Date.now() - touchT < 300) {
+    if (e.target.closest('.topbar, .nav, .dots, .timer, .btn')) return;
+    const dir = e.changedTouches[0].clientX > window.innerWidth / 2 ? 1 : -1;
+    showFlash(dir);
+    go(dir);
+  }
 }, { passive: true });
 
 document.addEventListener('keydown', e => {
